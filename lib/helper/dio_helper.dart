@@ -13,12 +13,7 @@ part of 'helper.dart';
 class DioApiHelper extends ApiHelper {
   static DioApiHelper? _instance;
 
-  DioApiHelper._({
-    ApiConfig? apiConfig,
-    Dio? dio,
-    String? baseUrl,
-    CacherManager? cacherManager,
-  }) {
+  DioApiHelper._({ApiConfig? apiConfig, Dio? dio, String? baseUrl}) {
     _dio =
         dio ??
         Dio(
@@ -45,11 +40,7 @@ class DioApiHelper extends ApiHelper {
     String? baseUrl,
     CacherManager? cacherManager,
   }) {
-    _instance ??= DioApiHelper._(
-      dio: dio,
-      baseUrl: baseUrl,
-      cacherManager: cacherManager,
-    );
+    _instance ??= DioApiHelper._(dio: dio, baseUrl: baseUrl);
     return _instance!;
   }
 
