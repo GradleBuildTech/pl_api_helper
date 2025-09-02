@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:pl_api_helper/cache/cache.dart';
+import 'package:pl_api_helper/helper/helper.dart';
+import 'package:dio/dio.dart';
+import 'package:pl_api_helper/interceptors/dio/cache_interceptor.dio.dart';
+import 'package:pl_api_helper/models/models.dart';
+import 'package:pl_api_helper/utils/method.dart';
 
-import 'package:flutter/services.dart';
-import 'package:pl_api_helper/pl_api_helper.dart';
+import 'models/categories.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,46 +20,85 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _plApiHelperPlugin = PlApiHelper();
+  List<CourseCategory> categories = [];
 
+  static String baseUrl = "";
+  static String bearerToken = "";
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    _initModule();
+  }
+
+  void _initModule() {
+    // ignore: avoid_single_cascade_in_expression_statements
+    DioApiHelper.init(
+      dio: Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          contentType: Headers.jsonContentType,
+          validateStatus: (status) =>
+              status! < 500 && status != 403 && status != 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        ),
+      ),
+      baseUrl: baseUrl,
+      cacherManager: CacherManager.instance,
+    )..addInterceptor(
+      CacheInterceptor(
+        cachingPaths: {
+          ApiMethod.get: {'/v1/course/category'},
+        },
+      ),
+    );
+  }
+
+  Future<void> _getCategories() async {
+    setState(() {
+      categories = [];
+    });
+    try {
+      final result = await DioApiHelper.instance.get(
+        url: '/v1/course/category',
+        forceGet: true,
+        cacheConfig: CacheConfig(duration: const Duration(minutes: 10)),
+        mapper: (data) => CourseCategoryResposne.fromJson(data),
+      );
+      setState(() {
+        categories = result.categories;
+      });
+    } catch (e) {
+      // Handle error
+      if (e is ApiError) {
+        print("Error Type: ${e.type}, Message: ${e.statusCode}");
+      }
+    }
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _plApiHelperPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
+        appBar: AppBar(title: const Text('Plugin example app')),
+        floatingActionButton: InkWell(
+          onTap: _getCategories,
+          child: const Icon(Icons.refresh),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: ListView.builder(
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            return ListTile(
+              title: Text(category.name),
+              subtitle: Text('ID: ${category.id}'),
+            );
+          },
         ),
       ),
     );

@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../cache/cache.dart';
-import '../../utils/constnants.dart';
+import '../../utils/constants.dart';
 import '../../utils/method.dart';
 
 extension _X on Map<ApiMethod, Set<String>> {
   bool compareWithRequest(RequestOptions options) {
     final paths = this[ApiMethod.fromString(options.method)];
     if (paths == null) return false;
-    return paths.contains(options.path);
+    return paths.contains(options.uri.path);
   }
 }
 
@@ -33,16 +33,12 @@ extension _X on Map<ApiMethod, Set<String>> {
 /// );
 /// ```
 class CacheInterceptor extends Interceptor {
-  final Dio dio;
-  final Duration defaultCacheDuration;
   final Map<ApiMethod, Set<String>> cachingPaths;
   final CacheConfig cacheConfig;
 
   CacheInterceptor({
-    this.cacheConfig = kDefaultCacheConfig,
     this.cachingPaths = const {},
-    this.defaultCacheDuration = const Duration(minutes: 5),
-    required this.dio,
+    this.cacheConfig = kDefaultCacheConfig,
   });
 
   @override

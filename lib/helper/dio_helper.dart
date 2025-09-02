@@ -1,35 +1,74 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:dio/dio.dart';
-import 'package:pl_api_helper/cache/cache.dart';
-import 'package:pl_api_helper/models/models.dart';
-import 'package:pl_api_helper/utils/method.dart';
-
-import 'helper.dart';
+part of 'helper.dart';
 
 ///[Singleton]
+/// Dio implementation of [ApiHelper]
+/// Requires an instance of [Dio] and a base URL to be provided during initialization.
+/// If not provided, they must be set before making any requests.
+/// ```dart
+/// Dio dio = Dio();
+/// String baseUrl = 'https://api.example.com';
+/// DioApiHelper apiHelper = DioApiHelper(dio: dio, baseUrl: base
+/// Url);
+/// ```
 class DioApiHelper extends ApiHelper {
   static DioApiHelper? _instance;
-  static DioApiHelper get instance => _instance ??= DioApiHelper._();
 
-  DioApiHelper._({Dio? dio, String? baseUrl}) {
-    _dio ??= dio;
-    _baseUrl = baseUrl;
+  DioApiHelper._({
+    ApiConfig? apiConfig,
+    Dio? dio,
+    String? baseUrl,
+    CacherManager? cacherManager,
+  }) {
+    _dio =
+        dio ??
+        Dio(
+          BaseOptions(
+            baseUrl: apiConfig?.baseUrl ?? '',
+            connectTimeout: Duration(
+              milliseconds: apiConfig?.timeout?.inMilliseconds ?? 30000,
+            ),
+            receiveTimeout: Duration(
+              milliseconds: apiConfig?.timeout?.inMilliseconds ?? 30000,
+            ),
+            headers: apiConfig?.defaultHeaders ?? {},
+            contentType: Headers.jsonContentType,
+            validateStatus:
+                apiConfig?.validateStatus ??
+                (status) => status != null && status < 500,
+          ),
+        );
+    _baseUrl = baseUrl ?? apiConfig?.baseUrl;
+  }
+
+  factory DioApiHelper.init({
+    Dio? dio,
+    String? baseUrl,
+    CacherManager? cacherManager,
+  }) {
+    _instance ??= DioApiHelper._(
+      dio: dio,
+      baseUrl: baseUrl,
+      cacherManager: cacherManager,
+    );
+    return _instance!;
+  }
+
+  static DioApiHelper get instance {
+    if (_instance == null) {
+      throw Exception(
+        'DioApiHelper is not initialized. Call DioApiHelper.init() first.',
+      );
+    }
+    return _instance!;
   }
 
   Dio? _dio;
   String? _baseUrl;
 
-  List<Interceptor> get interceptors => [];
-
   void addInterceptor(Interceptor interceptor) {
-    interceptors.add(interceptor);
-  }
-
-  void configDio(Dio dio) {
-    dio.interceptors.addAll(interceptors);
+    if (_dio != null) {
+      _dio!.interceptors.add(interceptor);
+    }
   }
 
   @override

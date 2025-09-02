@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../cache/cache.dart';
-import '../../utils/constnants.dart';
+import '../../utils/constants.dart';
 import '../../utils/method.dart';
 
 /// HTTP Client with caching capabilities

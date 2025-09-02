@@ -1,13 +1,18 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:dio/dio.dart' as dio;
+import 'package:dio/dio.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:pl_api_helper/cache/cache.dart';
 import 'package:pl_api_helper/utils/method.dart';
 
 import '../models/models.dart';
+
+part 'dio_helper.dart';
 
 typedef ApiResponseMapper<T> = T Function(Map<String, dynamic> data);
 
@@ -24,6 +29,7 @@ abstract class ApiHelper {
   }) async => await _handleRequest<T>(
     method: ApiMethod.get,
     url: url,
+    cacheConfig: cacheConfig,
     forceGet: forceGet,
     queryParameters: queryParameters,
     mapper: mapper,
@@ -74,12 +80,13 @@ abstract class ApiHelper {
     required ApiResponseMapper<T> mapper,
     bool newThreadParse = true,
   }) async {
-    if (method == ApiMethod.get && !forceGet) {
+    if (method == ApiMethod.get && !forceGet && cacheConfig != null) {
       final cacheData = await cacherManager.getData(url);
       if (cacheData != null) {
         return pareseResponse(responseBody: cacheData, mapper: mapper);
       }
     }
+
     return await executeRequest<T>(
       method: method,
       url: url,
