@@ -1,18 +1,182 @@
 # pl_api_helper
 
-A new Flutter plugin project.
+A Flutter plugin for simplified API calls, caching, and model mapping using Dio.
+
+## Features
+
+- Easy Dio initialization with base URL, headers, and cache manager.
+- Built-in cache interceptor for GET requests.
+- Simple API call and model mapping.
+- Supports custom cache configuration.
+
+---
 
 ## Getting Started
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+Add to your `pubspec.yaml`:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```yaml
+dependencies:
+  pl_api_helper: ^<latest_version>
+```
 
-The plugin project was generated without specifying the `--platforms` flag, no platforms are currently supported.
-To add platforms, run `flutter create -t plugin --platforms <platforms> .` in this directory.
-You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/to/pubspec-plugin-platforms.
+---
+
+## Usage
+
+### 1. Initialize DioApiHelper
+
+```dart
+import 'package:dio/dio.dart';
+import 'package:pl_api_helper/pl_api_helper.dart';
+
+void main() {
+  DioApiHelper.init(
+    dio: Dio(
+      BaseOptions(
+        baseUrl: 'https://your-api-domain.com',
+        contentType: Headers.jsonContentType,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer <your-token>',
+        },
+      ),
+    ),
+    baseUrl: 'https://your-api-domain.com',
+    cacherManager: CacherManager.instance,
+  )..addInterceptor(
+      CacheInterceptor(
+        cachingPaths: {
+          ApiMethod.get: {'/v1/course/category'},
+        },
+      ),
+    );
+}
+```
+
+---
+
+### 2. Call API and Parse Model
+
+```dart
+final result = await DioApiHelper.instance.get(
+  url: '/v1/course/category',
+  forceGet: true,
+  cacheConfig: CacheConfig(duration: Duration(minutes: 10)),
+  mapper: (data) => CourseCategoryResposne.fromJson(data),
+);
+
+// Access categories
+for (final category in result.categories) {
+  print('Category: ${category.name} (ID: ${category.id})');
+}
+```
+
+---
+
+### 3. Example Widget Integration
+
+```dart
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  List<CourseCategory> categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize DioApiHelper here
+  }
+
+  Future<void> _getCategories() async {
+    setState(() {
+      categories = [];
+    });
+    try {
+      final result = await DioApiHelper.instance.get(
+        url: '/v1/course/category',
+        forceGet: true,
+        cacheConfig: CacheConfig(duration: Duration(minutes: 10)),
+        mapper: (data) => CourseCategoryResposne.fromJson(data),
+      );
+      setState(() {
+        categories = result.categories;
+      });
+    } catch (e) {
+      if (e is ApiError) {
+        print("Error Type: ${e.type}, Message: ${e.statusCode}");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Plugin example app')),
+        floatingActionButton: InkWell(
+          onTap: _getCategories,
+          child: const Icon(Icons.refresh),
+        ),
+        body: ListView.builder(
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            return ListTile(
+              title: Text(category.name),
+              subtitle: Text('ID: ${category.id}'),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Model Example
+
+```dart
+class CourseCategory {
+  final String id;
+  final String name;
+
+  CourseCategory({required this.id, required this.name});
+
+  factory CourseCategory.fromJson(Map<String, dynamic> json) {
+    return CourseCategory(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'name': name};
+  }
+}
+
+class CourseCategoryResposne {
+  final List<CourseCategory> categories;
+
+  CourseCategoryResposne({required this.categories});
+
+  factory CourseCategoryResposne.fromJson(Map<String, dynamic> json) {
+    final cats = (json['categories'] as List<dynamic>)
+        .map((e) => CourseCategory.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return CourseCategoryResposne(categories: cats);
+  }
+}
+```
+
+---
+
+## License
+
+MIT
