@@ -57,7 +57,65 @@ void main() {
 
 ---
 
-### 2. Call API and Parse Model
+## 2. Using TokenDelegation and TokenInterceptor (Automatic Token Refresh)
+
+You can use `TokenInterceptor` to automatically attach access tokens to requests and refresh them when expired.
+
+### Step 1: Implement TokenDelegation
+
+Create a class that implements `TokenDelegation`:
+
+```dart
+class MyTokenDelegate implements TokenDelegation {
+  @override
+  Future<String> getAccessToken() async => /* load from storage */;
+  @override
+  Future<String> getRefreshToken() async => /* load from storage */;
+  @override
+  Future<void> saveAccessToken(String token) async => /* save to storage */;
+  @override
+  Future<void> saveRefreshToken(String token) async => /* save to storage */;
+  @override
+  Future<void> saveTokens(String accessToken, String? refreshToken) async { /* ... */ }
+  @override
+  Future<void> deleteToken() async => /* clear storage */;
+}
+```
+
+### Step 2: Add TokenInterceptor to Dio
+
+```dart
+import 'package:dio/dio.dart';
+import 'package:pl_api_helper/interceptors/dio/token_interceptor.dio.dart';
+
+final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
+
+dio.interceptors.add(
+  TokenInterceptor(
+    baseUrl: 'https://api.example.com',
+    refreshEndpoint: '/auth/refresh',
+    refreshPayloadBuilder: (refreshToken) => {
+      'refreshToken': refreshToken,
+    },
+    tokenDelegate: MyTokenDelegate(),
+    onUnauthenticated: () {
+      // Handle logout or navigation to login
+    },
+  ),
+);
+```
+
+### Step 3: Make API Calls
+
+```dart
+final response = await dio.get('/protected/resource');
+```
+
+> TokenInterceptor will automatically refresh the token on 401/403 errors and retry the request.
+
+---
+
+### 3. Call API and Parse Model
 
 ```dart
 final result = await DioApiHelper.instance.get(
@@ -75,7 +133,7 @@ for (final category in result.categories) {
 
 ---
 
-### 3. Example Widget Integration
+### 4. Example Widget Integration
 
 ```dart
 class MyApp extends StatefulWidget {

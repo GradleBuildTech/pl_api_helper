@@ -26,41 +26,44 @@ abstract class ApiHelper {
     bool forceGet = false,
     Map<String, dynamic>? queryParameters,
     bool newThreadParse = true,
-  }) async => await _handleRequest<T>(
-    method: ApiMethod.get,
-    url: url,
-    cacheConfig: cacheConfig,
-    forceGet: forceGet,
-    queryParameters: queryParameters,
-    mapper: mapper,
-    newThreadParse: newThreadParse,
-  );
+  }) async =>
+      await _handleRequest<T>(
+        method: ApiMethod.get,
+        url: url,
+        cacheConfig: cacheConfig,
+        forceGet: forceGet,
+        queryParameters: queryParameters,
+        mapper: mapper,
+        newThreadParse: newThreadParse,
+      );
 
   Future<T> post<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
     Map<String, dynamic>? request,
     bool newThreadParse = true,
-  }) async => await _handleRequest<T>(
-    method: ApiMethod.post,
-    url: url,
-    request: request,
-    mapper: mapper,
-    newThreadParse: newThreadParse,
-  );
+  }) async =>
+      await _handleRequest<T>(
+        method: ApiMethod.post,
+        url: url,
+        request: request,
+        mapper: mapper,
+        newThreadParse: newThreadParse,
+      );
 
   Future<T> put<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
     Map<String, dynamic>? request,
     bool newThreadParse = true,
-  }) async => await _handleRequest<T>(
-    method: ApiMethod.put,
-    url: url,
-    request: request,
-    mapper: mapper,
-    newThreadParse: newThreadParse,
-  );
+  }) async =>
+      await _handleRequest<T>(
+        method: ApiMethod.put,
+        url: url,
+        request: request,
+        mapper: mapper,
+        newThreadParse: newThreadParse,
+      );
 
   Future<T> uploadFile<T>({
     required String url,
