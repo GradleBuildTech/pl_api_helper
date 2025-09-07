@@ -3,30 +3,19 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
-import '../../delegation/token_delegation.dart';
+import '../base/token_base.dart';
 
-class TokenInterceptor extends Interceptor {
+class TokenInterceptor extends BaseTokenInterceptor implements Interceptor {
+  final String baseUrl;
+
   TokenInterceptor({
-    required String baseUrl,
-    String? refreshEndpoint,
-    Map<String, dynamic> Function(String token)? refreshPayloadBuilder,
-    required TokenDelegation tokenDelegate,
-    Function()? onUnauthenticated,
-  }) : _tokenDelegate = tokenDelegate,
-       _onUnauthenticated = onUnauthenticated,
-       _baseUrl = baseUrl,
-       _refreshEndpoint = refreshEndpoint,
-       _refreshPayloadBuilder = refreshPayloadBuilder;
-
-  final TokenDelegation _tokenDelegate;
-
-  final Function()? _onUnauthenticated;
-
-  final String _baseUrl;
-
-  final String? _refreshEndpoint;
-
-  final Map<String, dynamic> Function(String token)? _refreshPayloadBuilder;
+    required this.baseUrl,
+    super.refreshEndpoint,
+    super.refreshPayloadBuilder,
+    super.refreshResponseParser,
+    super.onUnauthenticated,
+    required super.tokenDelegate,
+  });
 
   bool _isRefreshing = false;
 
@@ -37,7 +26,7 @@ class TokenInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    var accessToken = await _tokenDelegate.getAccessToken();
+    var accessToken = await tokenDelegate.getAccessToken();
     if (accessToken.isEmpty) {
       return handler.next(options);
     }
@@ -65,7 +54,7 @@ class TokenInterceptor extends Interceptor {
 
     if (!isAuthError) return handler.next(err);
 
-    final accessToken = await _tokenDelegate.getAccessToken();
+    final accessToken = await tokenDelegate.getAccessToken();
     if (accessToken.isEmpty) {
       return handler.next(err);
     }
@@ -78,7 +67,7 @@ class TokenInterceptor extends Interceptor {
       _queue.add(() async {
         try {
           options.headers["Authorization"] =
-              "Bearer ${await _tokenDelegate.getAccessToken()}";
+              "Bearer ${await tokenDelegate.getAccessToken()}";
           final response = await Dio().fetch(options);
           completer.complete(response);
         } catch (e) {
@@ -91,7 +80,7 @@ class TokenInterceptor extends Interceptor {
     _isRefreshing = true;
 
     try {
-      final newAccessToken = await _refreshAccessToken();
+      final newAccessToken = await refreshToken();
       if (newAccessToken.isEmpty) {
         _isRefreshing = false;
         _queue.clear();
@@ -119,7 +108,7 @@ class TokenInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (response.statusCode == HttpStatus.unauthorized ||
         response.statusCode == HttpStatus.forbidden) {
-      _handleTokenClear();
+      handleTokenClear();
     }
     return handler.next(response);
   }
@@ -129,52 +118,48 @@ class TokenInterceptor extends Interceptor {
   /// If the refresh token is invalid or expired, it will clear the tokens and return an empty string.
   /// If the refresh token is not available, it will also clear the tokens and return an empty string.
   /// If any error occurs during the request, it will clear the tokens
-  Future<String> _refreshAccessToken() async {
-    if (_refreshEndpoint == null ||
-        _refreshEndpoint.isEmpty ||
-        _refreshPayloadBuilder == null) {
-      _handleTokenClear();
+
+  @override
+  Future<String> refreshToken() async {
+    if (refreshEndpoint == null ||
+        (refreshEndpoint?.isEmpty == true) ||
+        refreshPayloadBuilder == null) {
+      handleTokenClear();
       return "";
     }
-    final refreshToken = await _tokenDelegate.getRefreshToken();
+    final refreshToken = await tokenDelegate.getRefreshToken();
     if (refreshToken.isEmpty) {
-      _handleTokenClear(emitUnauthenticated: false);
+      handleTokenClear(emitUnauthenticated: false);
       return "";
     }
 
     final dio = Dio()
-      ..options.baseUrl = _baseUrl
+      ..options.baseUrl = baseUrl
       ..options.connectTimeout = const Duration(seconds: 10)
       ..options.receiveTimeout = const Duration(seconds: 10)
       ..interceptors.add(LogInterceptor());
 
     try {
       final response = await dio.post(
-        _refreshEndpoint,
-        data: _refreshPayloadBuilder(refreshToken),
+        refreshEndpoint!,
+        data: refreshPayloadBuilder!(refreshToken),
       );
       if (response.statusCode == HttpStatus.ok) {
         final data = response.data;
-        final newToken = data["data"]?["accessToken"] as String?;
-        final newFreshToken = data["data"]?["refreshToken"] as String?;
+        final (newToken, newFreshToken) =
+            refreshResponseParser?.call(data) ?? (null, null);
+
         if (newToken != null && newToken.isNotEmpty) {
-          await _tokenDelegate.saveAccessToken(newToken);
-          await _tokenDelegate.saveRefreshToken(newFreshToken ?? "");
+          await tokenDelegate.saveAccessToken(newToken);
+          await tokenDelegate.saveRefreshToken(newFreshToken ?? "");
           return newToken;
         }
       }
-      _handleTokenClear();
+      handleTokenClear();
     } catch (_) {
-      _handleTokenClear();
+      handleTokenClear();
     }
 
     return "";
-  }
-
-  void _handleTokenClear({bool emitUnauthenticated = true}) async {
-    await _tokenDelegate.deleteToken();
-    if (emitUnauthenticated) {
-      _onUnauthenticated?.call();
-    }
   }
 }
