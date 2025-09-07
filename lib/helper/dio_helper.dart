@@ -170,7 +170,11 @@ class DioApiHelper extends ApiHelper {
       await handleDioResponse(result);
 
       if (cacheConfig != null) {
-        await cacherManager.setData(url, jsonEncode(result.data), cacheConfig);
+        await cacherManager.setData(
+          ApiHelper.buildUrl(path: url, queryParameters: queryParameters),
+          jsonEncode(result.data),
+          cacheConfig,
+        );
       }
       return await pareseResponse<T>(mapper: mapper, jsonBody: result.data);
     } on DioException catch (e) {

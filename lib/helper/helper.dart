@@ -26,44 +26,41 @@ abstract class ApiHelper {
     bool forceGet = false,
     Map<String, dynamic>? queryParameters,
     bool newThreadParse = true,
-  }) async =>
-      await _handleRequest<T>(
-        method: ApiMethod.get,
-        url: url,
-        cacheConfig: cacheConfig,
-        forceGet: forceGet,
-        queryParameters: queryParameters,
-        mapper: mapper,
-        newThreadParse: newThreadParse,
-      );
+  }) async => await _handleRequest<T>(
+    method: ApiMethod.get,
+    url: url,
+    cacheConfig: cacheConfig,
+    forceGet: forceGet,
+    queryParameters: queryParameters,
+    mapper: mapper,
+    newThreadParse: newThreadParse,
+  );
 
   Future<T> post<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
     Map<String, dynamic>? request,
     bool newThreadParse = true,
-  }) async =>
-      await _handleRequest<T>(
-        method: ApiMethod.post,
-        url: url,
-        request: request,
-        mapper: mapper,
-        newThreadParse: newThreadParse,
-      );
+  }) async => await _handleRequest<T>(
+    method: ApiMethod.post,
+    url: url,
+    request: request,
+    mapper: mapper,
+    newThreadParse: newThreadParse,
+  );
 
   Future<T> put<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
     Map<String, dynamic>? request,
     bool newThreadParse = true,
-  }) async =>
-      await _handleRequest<T>(
-        method: ApiMethod.put,
-        url: url,
-        request: request,
-        mapper: mapper,
-        newThreadParse: newThreadParse,
-      );
+  }) async => await _handleRequest<T>(
+    method: ApiMethod.put,
+    url: url,
+    request: request,
+    mapper: mapper,
+    newThreadParse: newThreadParse,
+  );
 
   Future<T> uploadFile<T>({
     required String url,
@@ -83,8 +80,12 @@ abstract class ApiHelper {
     required ApiResponseMapper<T> mapper,
     bool newThreadParse = true,
   }) async {
+    final buildUrl = ApiHelper.buildUrl(
+      path: url,
+      queryParameters: queryParameters,
+    );
     if (method == ApiMethod.get && !forceGet && cacheConfig != null) {
-      final cacheData = await cacherManager.getData(url);
+      final cacheData = await cacherManager.getData(buildUrl);
       if (cacheData != null) {
         return pareseResponse(responseBody: cacheData, mapper: mapper);
       }
@@ -168,5 +169,38 @@ abstract class ApiHelper {
     }, p.sendPort);
 
     return await p.first as ApiResponse<T>;
+  }
+
+  static String buildUrl({
+    String? baseUrl,
+    required String path,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    try {
+      var url = "";
+      if (baseUrl?.endsWith('/') ?? false) {
+        baseUrl = baseUrl!.substring(0, baseUrl.length - 1);
+      }
+      if (path.startsWith('/')) {
+        path = path.substring(1);
+      }
+      url = (baseUrl != null ? '$baseUrl/$path' : path);
+      if (queryParameters != null && queryParameters.isNotEmpty) {
+        for (var key in queryParameters.keys) {
+          final value = queryParameters[key];
+          if (value != null) {
+            if (url.contains('?')) {
+              url = '$url&$key=$value';
+            } else {
+              url = '$url?$key=$value';
+            }
+          }
+        }
+      }
+
+      return url;
+    } catch (e) {
+      return "";
+    }
   }
 }
