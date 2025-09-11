@@ -14,24 +14,7 @@ class DioApiHelper extends ApiHelper {
   static DioApiHelper? _instance;
 
   DioApiHelper._({ApiConfig? apiConfig, Dio? dio, String? baseUrl}) {
-    _dio =
-        dio ??
-        Dio(
-          BaseOptions(
-            baseUrl: apiConfig?.baseUrl ?? '',
-            connectTimeout: Duration(
-              milliseconds: apiConfig?.timeout?.inMilliseconds ?? 30000,
-            ),
-            receiveTimeout: Duration(
-              milliseconds: apiConfig?.timeout?.inMilliseconds ?? 30000,
-            ),
-            headers: apiConfig?.defaultHeaders ?? {},
-            contentType: Headers.jsonContentType,
-            validateStatus:
-                apiConfig?.validateStatus ??
-                (status) => status != null && status < 500,
-          ),
-        );
+    _dio = dio ?? apiConfig?.toDio();
     _baseUrl = baseUrl ?? apiConfig?.baseUrl;
   }
 

@@ -5,5 +5,5 @@ const kDefaultCacheConfig = CacheConfig(
   useMemoryCache: true,
   useDiskCache: true,
   maxCacheSize: null,
-  onlyCacheNetworkNotFound: false,
+  onlyGetWhenDisconnected: false,
 );

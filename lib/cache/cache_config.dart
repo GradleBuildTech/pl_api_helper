@@ -9,7 +9,7 @@ class CacheConfig {
 
   final int? maxCacheSize;
 
-  final bool onlyCacheNetworkNotFound;
+  final bool onlyGetWhenDisconnected;
 
   const CacheConfig({
     this.duration = const Duration(minutes: 5),
@@ -17,7 +17,7 @@ class CacheConfig {
     this.useMemoryCache = true,
     this.useDiskCache = true,
     this.maxCacheSize,
-    this.onlyCacheNetworkNotFound = false,
+    this.onlyGetWhenDisconnected = false,
   });
 
   CacheConfig copyWith({
@@ -26,11 +26,11 @@ class CacheConfig {
     bool? useMemoryCache,
     bool? useDiskCache,
     int? maxCacheSize,
-    bool? onlyCacheNetworkNotFound,
+    bool? onlyGetWhenDisconnected,
   }) {
     return CacheConfig(
-      onlyCacheNetworkNotFound:
-          onlyCacheNetworkNotFound ?? this.onlyCacheNetworkNotFound,
+      onlyGetWhenDisconnected:
+          onlyGetWhenDisconnected ?? this.onlyGetWhenDisconnected,
       duration: duration ?? this.duration,
       keyPrefix: keyPrefix ?? this.keyPrefix,
       useMemoryCache: useMemoryCache ?? this.useMemoryCache,
