@@ -86,12 +86,10 @@ class SstreamDio {
       try {
         final decodeData = jsonDecode(responseData.toString());
         if (doesErrorExists(decodeData)) {
-          final error = decodeData['error'] as Map<String, dynamic>;
-          var message = error['message'] as String;
-          message = message.isEmpty ? jsonEncode(error) : message;
-
-          final statusCode = response.statusCode;
-          controller.addError(StreamError(message, statusCode));
+          final errorMapper = _config?.parseStreamError;
+          controller.addError(
+            errorMapper?.call(decodeData) ?? StreamError('Unknown error', 500),
+          );
           return;
         }
       } catch (_) {
