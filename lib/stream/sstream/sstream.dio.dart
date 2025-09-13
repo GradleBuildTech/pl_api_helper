@@ -66,10 +66,8 @@ class SstreamDio {
   }) {
     var data = utf8.decode(chunk.codeUnits, allowMalformed: true);
     responseData.write(data);
-    final dataList = data
-        .split("\n")
-        .where((element) => element.trim().isNotEmpty)
-        .toList();
+    final dataList =
+        data.split("\n").where((element) => element.trim().isNotEmpty).toList();
     for (final line in dataList) {
       if (line.startsWith(startParse)) {
         final jsonString = line.substring(startParse.length).trim();
@@ -154,42 +152,40 @@ class SstreamDio {
     final controller = StreamController<T>.broadcast();
     final startParse = getStartParse(_config);
     final endParse = getEndParse(_config);
-    request
-        .then((response) {
-          final body = response.data;
-          final responseData = StringBuffer();
-          (body?.stream).listen(
-            (chunk) {
-              try {
-                handleStreamChunk<T>(
-                  mapper: mapper,
-                  onDone: onDone,
-                  chunk: utf8.decode(chunk, allowMalformed: true),
-                  responseData: responseData,
-                  startParse: startParse ?? '',
-                  endParse: endParse ?? '',
-                  response: response,
-                  controller: controller,
-                );
-              } catch (e) {
-                controller.addError('Stream parsing error: $e');
-                return;
-              }
-            },
-            onError: (error) {
-              controller.addError('Stream error: $error');
-              return;
-            },
-            onDone: () {
-              controller.close();
-            },
-            cancelOnError: true,
-          );
-        })
-        .catchError((error) {
-          controller.addError('Request error: $error');
+    request.then((response) {
+      final body = response.data;
+      final responseData = StringBuffer();
+      (body?.stream).listen(
+        (chunk) {
+          try {
+            handleStreamChunk<T>(
+              mapper: mapper,
+              onDone: onDone,
+              chunk: utf8.decode(chunk, allowMalformed: true),
+              responseData: responseData,
+              startParse: startParse ?? '',
+              endParse: endParse ?? '',
+              response: response,
+              controller: controller,
+            );
+          } catch (e) {
+            controller.addError('Stream parsing error: $e');
+            return;
+          }
+        },
+        onError: (error) {
+          controller.addError('Stream error: $error');
+          return;
+        },
+        onDone: () {
           controller.close();
-        });
+        },
+        cancelOnError: true,
+      );
+    }).catchError((error) {
+      controller.addError('Request error: $error');
+      controller.close();
+    });
     return controller.stream;
   }
 }

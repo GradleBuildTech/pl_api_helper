@@ -16,7 +16,7 @@ class HttpHelper extends ApiHelper {
   Map<String, String> _defaultHeaders = {};
   Duration _timeout = const Duration(seconds: 30);
   bool Function(int?) _validateStatus = (status) =>
-      status != null && status < 500;
+    status != null && status < 500;
 
   HttpHelper._({ApiConfig? apiConfig, String? baseUrl}) {
     _baseUrl = baseUrl ?? apiConfig?.baseUrl;
