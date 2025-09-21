@@ -135,6 +135,7 @@ class ApiError {
 
   factory ApiError.fromHttp(http.Response response) {
     final statusCode = response.statusCode;
+
     final body = response.body;
     String? message;
 

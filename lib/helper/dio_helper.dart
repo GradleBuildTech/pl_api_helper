@@ -20,6 +20,7 @@ class DioApiHelper extends ApiHelper {
 
   factory DioApiHelper.init({
     Dio? dio,
+
     String? baseUrl,
     CacherManager? cacherManager,
   }) {
@@ -73,7 +74,7 @@ class DioApiHelper extends ApiHelper {
   @override
   Future<T> pareseResponse<T>({
     bool newThreadParse = true,
-    String? responseBody, 
+    String? responseBody,
     Map<String, dynamic>? jsonBody,
     required ApiResponseMapper<T> mapper,
   }) async {
