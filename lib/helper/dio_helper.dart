@@ -72,7 +72,7 @@ class DioApiHelper extends ApiHelper {
   }
 
   @override
-  Future<T> pareseResponse<T>({
+  Future<T> parseResponse<T>({
     bool newThreadParse = true,
     String? responseBody,
     Map<String, dynamic>? jsonBody,
@@ -91,20 +91,14 @@ class DioApiHelper extends ApiHelper {
               (data) => mapper(data as Map<String, dynamic>),
             );
       return apiResponse.data;
-    } else if (jsonBody != null) {
-      final apiResponse = newThreadParse
-          ? await parseApiResponse<T>(jsonBody, (json) => mapper(json))
-          : ApiResponse<T>.fromJson(
-              jsonBody,
-              (data) => mapper(data as Map<String, dynamic>),
-            );
-      return apiResponse.data;
-    } else {
-      throw ApiError(
-        type: ApiErrorType.unknown,
-        message: 'Both responseBody and jsonBody are null',
-      );
     }
+    final apiResponse = newThreadParse
+        ? await parseApiResponse<T>(jsonBody!, (json) => mapper(json))
+        : ApiResponse<T>.fromJson(
+            jsonBody!,
+            (data) => mapper(data as Map<String, dynamic>),
+          );
+    return apiResponse.data;
   }
 
   @override
@@ -160,7 +154,7 @@ class DioApiHelper extends ApiHelper {
           cacheConfig,
         );
       }
-      return await pareseResponse<T>(mapper: mapper, jsonBody: result.data);
+      return await parseResponse<T>(mapper: mapper, jsonBody: result.data);
     } on DioException catch (e) {
       if (e.response != null) {
         await handleDioResponse(e.response!);

@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:pl_api_helper/pl_api_helper.dart'
     show StreamConfig, StreamError;
-import 'package:pl_api_helper/utils/method.dart';
 
 typedef StreamResposneMapper<T> = T Function(Map<String, dynamic> data);
 
@@ -42,6 +41,7 @@ class SstreamDio {
     if (_dio == null) {
       throw Exception('Dio instance is not initialized.');
     }
+
     return _dio!;
   }
 
@@ -66,8 +66,10 @@ class SstreamDio {
   }) {
     var data = utf8.decode(chunk.codeUnits, allowMalformed: true);
     responseData.write(data);
-    final dataList =
-        data.split("\n").where((element) => element.trim().isNotEmpty).toList();
+    final dataList = data
+        .split("\n")
+        .where((element) => element.trim().isNotEmpty)
+        .toList();
     for (final line in dataList) {
       if (line.startsWith(startParse)) {
         final jsonString = line.substring(startParse.length).trim();
@@ -105,7 +107,6 @@ class SstreamDio {
   }) {
     final dio = checkDio();
     return _handleRequest<T>(
-      ApiMethod.post,
       dio.post(
         dio.options.baseUrl + endpoint,
         options: Options(responseType: ResponseType.stream),
@@ -125,7 +126,6 @@ class SstreamDio {
   }) {
     final dio = checkDio();
     return _handleRequest<T>(
-      ApiMethod.get,
       dio.get(
         dio.options.baseUrl + endpoint,
         options: Options(responseType: ResponseType.stream),
@@ -143,7 +143,6 @@ class SstreamDio {
   /// [onError] - Function to handle errors
   /// [onDone] - Function to call when done
   Stream<T> _handleRequest<T>(
-    ApiMethod method,
     Future<Response> request,
     StreamResposneMapper<T> mapper, {
     Function(Object error)? onError,
@@ -152,40 +151,42 @@ class SstreamDio {
     final controller = StreamController<T>.broadcast();
     final startParse = getStartParse(_config);
     final endParse = getEndParse(_config);
-    request.then((response) {
-      final body = response.data;
-      final responseData = StringBuffer();
-      (body?.stream).listen(
-        (chunk) {
-          try {
-            handleStreamChunk<T>(
-              mapper: mapper,
-              onDone: onDone,
-              chunk: utf8.decode(chunk, allowMalformed: true),
-              responseData: responseData,
-              startParse: startParse ?? '',
-              endParse: endParse ?? '',
-              response: response,
-              controller: controller,
-            );
-          } catch (e) {
-            controller.addError('Stream parsing error: $e');
-            return;
-          }
-        },
-        onError: (error) {
-          controller.addError('Stream error: $error');
-          return;
-        },
-        onDone: () {
+    request
+        .then((response) {
+          final body = response.data;
+          final responseData = StringBuffer();
+          (body?.stream).listen(
+            (chunk) {
+              try {
+                handleStreamChunk<T>(
+                  mapper: mapper,
+                  onDone: onDone,
+                  chunk: utf8.decode(chunk, allowMalformed: true),
+                  responseData: responseData,
+                  startParse: startParse ?? '',
+                  endParse: endParse ?? '',
+                  response: response,
+                  controller: controller,
+                );
+              } catch (e) {
+                controller.addError('Stream parsing error: $e');
+                return;
+              }
+            },
+            onError: (error) {
+              controller.addError('Stream error: $error');
+              return;
+            },
+            onDone: () {
+              controller.close();
+            },
+            cancelOnError: true,
+          );
+        })
+        .catchError((error) {
+          controller.addError('Request error: $error');
           controller.close();
-        },
-        cancelOnError: true,
-      );
-    }).catchError((error) {
-      controller.addError('Request error: $error');
-      controller.close();
-    });
+        });
     return controller.stream;
   }
 }

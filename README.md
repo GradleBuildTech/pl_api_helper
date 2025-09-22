@@ -57,7 +57,7 @@ void main() {
 
 ---
 
-## 2. Using TokenDelegation and TokenInterceptor (Automatic Token Refresh)
+## 2. Using TokenDelegation and DioTokenInterceptor (Automatic Token Refresh)
 
 You can use `TokenInterceptor` to automatically attach access tokens to requests and refresh them when expired.
 
@@ -82,7 +82,7 @@ class MyTokenDelegate implements TokenDelegation {
 }
 ```
 
-### Step 2: Add TokenInterceptor to Dio
+### Step 2: Add DioTokenInterceptor to Dio
 
 ```dart
 import 'package:dio/dio.dart';
@@ -91,7 +91,7 @@ import 'package:pl_api_helper/interceptors/dio/token_interceptor.dio.dart';
 final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
 
 dio.interceptors.add(
-  TokenInterceptor(
+  DioTokenInterceptor(
     baseUrl: 'https://api.example.com',
     refreshEndpoint: '/auth/refresh',
     refreshPayloadBuilder: (refreshToken) => {
@@ -111,7 +111,7 @@ dio.interceptors.add(
 final response = await dio.get('/protected/resource');
 ```
 
-> TokenInterceptor will automatically refresh the token on 401/403 errors and retry the request.
+> DioTokenInterceptor will automatically refresh the token on 401/403 errors and retry the request.
 
 ---
 

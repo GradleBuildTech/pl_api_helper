@@ -3,3 +3,5 @@ export 'models/models.dart';
 export 'cache/cache.dart';
 export 'models/api_config.dart';
 export 'stream/stream.dart';
+
+export 'interceptors/http/models/base_interceptors.dart';

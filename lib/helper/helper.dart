@@ -16,9 +16,12 @@ part 'dio_helper.dart';
 
 typedef ApiResponseMapper<T> = T Function(Map<String, dynamic> data);
 
+///[ApiHelper] is a base class for API helpers.
+/// It provides methods for making HTTP requests and parsing responses.
 abstract class ApiHelper {
   CacherManager get cacherManager => CacherManager.instance;
 
+  ///[GET]  Fetch data from a REST API endpoint.
   Future<T> get<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
@@ -36,6 +39,7 @@ abstract class ApiHelper {
     newThreadParse: newThreadParse,
   );
 
+  ///[POST] Send data to a REST API endpoint.
   Future<T> post<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
@@ -49,6 +53,7 @@ abstract class ApiHelper {
     newThreadParse: newThreadParse,
   );
 
+  ///[PUT] Update data at a REST API endpoint.
   Future<T> put<T>({
     required String url,
     required ApiResponseMapper<T> mapper,
@@ -62,6 +67,21 @@ abstract class ApiHelper {
     newThreadParse: newThreadParse,
   );
 
+  ///[DELETE] Remove data from a REST API endpoint.
+  Future<T> delete<T>({
+    required String url,
+    required ApiResponseMapper<T> mapper,
+    Map<String, dynamic>? request,
+    bool newThreadParse = true,
+  }) async => await _handleRequest<T>(
+    method: ApiMethod.delete,
+    url: url,
+    request: request,
+    mapper: mapper,
+    newThreadParse: newThreadParse,
+  );
+
+  ///[UPLOAD] Upload a file to a REST API endpoint.
   Future<T> uploadFile<T>({
     required String url,
     required File file,
@@ -69,6 +89,10 @@ abstract class ApiHelper {
     bool newThreadParse = true,
   });
 
+  /// Handle the request and caching logic
+  /// - If the method is GET and caching is enabled, it will first check the cache.
+  /// If a cached response is found, it will be returned.
+  /// - If no cached response is found or the method is not GET, it will execute
   Future<T> _handleRequest<T>({
     required ApiMethod method,
     required String url,
@@ -82,12 +106,13 @@ abstract class ApiHelper {
   }) async {
     final buildUrl = ApiHelper.buildUrl(
       path: url,
+
       queryParameters: queryParameters,
     );
     if (method == ApiMethod.get && !forceGet && cacheConfig != null) {
       final cacheData = await cacherManager.getData(buildUrl);
       if (cacheData != null) {
-        return pareseResponse(responseBody: cacheData, mapper: mapper);
+        return parseResponse(responseBody: cacheData, mapper: mapper);
       }
     }
 
@@ -102,6 +127,9 @@ abstract class ApiHelper {
     );
   }
 
+  /// Execute the actual HTTP request.
+  /// This method must be implemented by subclasses to perform the request
+  /// using a specific HTTP client (e.g., Dio, http).
   Future<T> executeRequest<T>({
     required ApiMethod method,
     required String url,
@@ -112,7 +140,7 @@ abstract class ApiHelper {
     bool newThreadParse = true,
   });
 
-  Future<T> pareseResponse<T>({
+  Future<T> parseResponse<T>({
     bool newThreadParse = true,
     String? responseBody,
     Map<String, dynamic>? jsonBody,

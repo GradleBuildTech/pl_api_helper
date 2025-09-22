@@ -5,10 +5,10 @@ import 'package:dio/dio.dart';
 
 import '../base/token_base.dart';
 
-class TokenInterceptor extends BaseTokenInterceptor implements Interceptor {
+class DioTokenInterceptor extends BaseTokenInterceptor implements Interceptor {
   final String baseUrl;
 
-  TokenInterceptor({
+  DioTokenInterceptor({
     required this.baseUrl,
     super.refreshEndpoint,
     super.refreshPayloadBuilder,

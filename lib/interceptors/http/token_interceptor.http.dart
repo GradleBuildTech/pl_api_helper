@@ -3,92 +3,87 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:pl_api_helper/utils/logger.dart';
 
 import '../base/token_base.dart';
+import 'models/base_interceptors.dart';
 
-class TokenHttpClient extends BaseTokenInterceptor with http.BaseClient {
-  final http.Client inner;
-
-  TokenHttpClient({
-    required this.inner,
+class HttpTokenInterceptor extends BaseTokenInterceptor
+    implements BaseInterceptor {
+  final http.Client client;
+  HttpTokenInterceptor({
+    required this.client,
+    required super.tokenDelegate,
     super.refreshEndpoint,
     super.refreshPayloadBuilder,
     super.refreshResponseParser,
     super.onUnauthenticated,
-    required super.tokenDelegate,
   });
 
-  final List<Function()> _queue = [];
-  bool _isRefreshing = false;
-
+  /// Indicates whether a token refresh is currently in progress.
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    // Add Authorization header
-    final accessToken = await tokenDelegate.getAccessToken();
-    if (accessToken.isNotEmpty) {
-      request.headers["Authorization"] = "Bearer $accessToken";
-    }
-
-    late http.StreamedResponse response;
+  Future<void> onRequest({
+    required String method,
+    required String url,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? body,
+  }) async {
     try {
-      response = await inner.send(request);
-    } catch (_) {
-      rethrow;
-    }
-    final isAuthError =
-        response.statusCode == HttpStatus.unauthorized ||
-        response.statusCode == HttpStatus.forbidden;
-    if (!isAuthError) return response;
-
-    if (accessToken.isEmpty || refreshEndpoint == null) {
-      return response;
-    }
-    if (_isRefreshing) {
-      final completer = Completer<http.Response>();
-      _queue.add(() async {
-        try {
-          final retriedRequest = http.Request(request.method, request.url)
-            ..headers.addAll(request.headers)
-            ..bodyBytes = await request.finalize().toBytes();
-          final retriedResponse = await send(retriedRequest);
-          completer.complete(http.Response.fromStream(retriedResponse));
-        } catch (e) {
-          completer.completeError(e);
-        }
-      });
-      final data = await completer.future;
-      final bytes = utf8.encode(data.body);
-      final stream = http.ByteStream.fromBytes(bytes);
-      return http.StreamedResponse(stream, data.statusCode, request: request);
-    }
-    _isRefreshing = true;
-    try {
-      final newAccessToken = await refreshToken();
-      if (newAccessToken.isEmpty) {
-        _isRefreshing = false;
-        _queue.clear();
-        return response;
+      final accessToken = await tokenDelegate.getAccessToken();
+      if (accessToken.isEmpty) {
+        return;
       }
-      //Retry the original request with the new token
-      final retriedRequest = http.Request(request.method, request.url)
-        ..headers.addAll(request.headers)
-        ..headers["Authorization "] = "Bearer $newAccessToken"
-        ..bodyBytes = await request.finalize().toBytes();
-      for (final task in _queue) {
-        await task();
-      }
-      _queue.clear();
-      _isRefreshing = false;
-      response = await send(retriedRequest);
-
-      return response;
-    } catch (_) {
-      _isRefreshing = false;
-      _queue.clear();
-      return response;
+      headers ??= {};
+      headers["Authorization"] = "Bearer $accessToken";
+    } catch (e) {
+      Logger.d("TokenHttpClient", e.toString());
     }
   }
 
+  /// Called when an error occurs during the request
+  @override
+  Future<http.StreamedResponse?> onError(Object error) async => null;
+
+  /// Called after a response is received
+  @override
+  Future<void> onResponse(http.Response response) async {
+    final statusCode = response.statusCode;
+    final isAuthError =
+        response.statusCode == HttpStatus.unauthorized ||
+        response.statusCode == HttpStatus.forbidden;
+    if (statusCode == HttpStatus.badGateway ||
+        statusCode == HttpStatus.serviceUnavailable) {
+      return;
+    }
+    if (!isAuthError) return;
+    final accessToken = await tokenDelegate.getAccessToken();
+    if (accessToken.isEmpty) {
+      return;
+    }
+
+    final newAccessToken = await refreshToken();
+    if (newAccessToken.isEmpty) {
+      return;
+    }
+
+    final completer = Completer<http.Response>();
+    try {
+      final retriedRequest =
+          http.Request(response.request!.method, response.request!.url)
+            ..headers.addAll(response.request!.headers)
+            ..bodyBytes = await response.request!.finalize().toBytes();
+      final retriedResponse = await client.send(retriedRequest);
+      completer.complete(http.Response.fromStream(retriedResponse));
+    } catch (e) {
+      completer.completeError(e);
+    }
+    final data = await completer.future;
+    response = data;
+    return;
+  }
+
+  /// Refreshes the access token using the refresh token.
   @override
   Future<String> refreshToken() async {
     if (refreshEndpoint == null ||
