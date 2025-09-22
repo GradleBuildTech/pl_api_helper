@@ -32,7 +32,6 @@ class CacheHttpClient extends http.BaseClient {
     this.cacheConfig = kDefaultCacheConfig,
   }) : _inner = inner ?? http.Client();
 
-  
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final cacheKey = _generateCacheKey(request);

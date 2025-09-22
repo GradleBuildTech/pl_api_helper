@@ -1,14 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:http/http.dart' as http;
-import 'package:pl_api_helper/cache/cache_config.dart';
-import 'package:pl_api_helper/interceptors/http/models/base_interceptors.dart';
-import 'package:pl_api_helper/utils/logger.dart';
-import 'package:pl_api_helper/utils/method.dart';
-
-import '../models/models.dart';
-import 'helper.dart';
+part of 'helper.dart';
 
 ///[HttpHelper] is a singleton class for making HTTP requests using the `http` package.
 /// It extends the [ApiHelper] class and implements methods for GET, POST, PUT, DELETE requests,

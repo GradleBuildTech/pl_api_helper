@@ -10,9 +10,13 @@ import 'package:http/http.dart' as http;
 import 'package:pl_api_helper/cache/cache.dart';
 import 'package:pl_api_helper/utils/method.dart';
 
+import '../interceptors/http/models/base_interceptors.dart';
 import '../models/models.dart';
+import '../utils/logger.dart';
 
 part 'dio_helper.dart';
+
+part 'http_helper.dart';
 
 typedef ApiResponseMapper<T> = T Function(Map<String, dynamic> data);
 
@@ -106,7 +110,6 @@ abstract class ApiHelper {
   }) async {
     final buildUrl = ApiHelper.buildUrl(
       path: url,
-
       queryParameters: queryParameters,
     );
     if (method == ApiMethod.get && !forceGet && cacheConfig != null) {

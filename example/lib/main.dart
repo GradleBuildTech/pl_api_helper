@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pl_api_helper/cache/cache.dart';
-import 'package:pl_api_helper/helper/helper.dart';
-import 'package:dio/dio.dart';
-import 'package:pl_api_helper/interceptors/dio/cache_interceptor.dio.dart';
+import 'package:pl_api_helper/helper/helper.dart' show HttpHelper;
 import 'package:pl_api_helper/models/models.dart';
-import 'package:pl_api_helper/utils/method.dart';
 
 import 'models/categories.dart';
 
@@ -31,28 +28,17 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _initModule() {
-    // ignore: avoid_single_cascade_in_expression_statements
-    DioApiHelper.init(
-      dio: Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          contentType: Headers.jsonContentType,
-          validateStatus: (status) =>
-              status! < 500 && status != 403 && status != 401,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $bearerToken',
-          },
-        ),
-      ),
+    HttpHelper.init(
       baseUrl: baseUrl,
-      cacherManager: CacherManager.instance,
-    )..addInterceptor(
-      CacheInterceptor(
-        cachingPaths: {
-          ApiMethod.get: {'/v1/course/category'},
+      apiConfig: ApiConfig(
+        baseUrl: baseUrl,
+        defaultHeaders: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $bearerToken',
         },
+        timeout: const Duration(seconds: 30),
+        // validateStatus: (status) => status != null && status < 500,
       ),
     );
   }
@@ -62,9 +48,10 @@ class _MyAppState extends State<MyApp> {
       categories = [];
     });
     try {
-      final result = await DioApiHelper.instance.get(
+      final result = await HttpHelper.instance.get(
         url: '/v1/course/category',
         forceGet: true,
+
         cacheConfig: CacheConfig(duration: const Duration(minutes: 10)),
         mapper: (data) => CourseCategoryResposne.fromJson(data),
       );

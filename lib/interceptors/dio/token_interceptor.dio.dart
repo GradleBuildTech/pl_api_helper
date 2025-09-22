@@ -118,7 +118,6 @@ class DioTokenInterceptor extends BaseTokenInterceptor implements Interceptor {
   /// If the refresh token is invalid or expired, it will clear the tokens and return an empty string.
   /// If the refresh token is not available, it will also clear the tokens and return an empty string.
   /// If any error occurs during the request, it will clear the tokens
-
   @override
   Future<String> refreshToken() async {
     if (refreshEndpoint == null ||

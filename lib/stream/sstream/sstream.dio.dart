@@ -5,26 +5,20 @@ import 'package:dio/dio.dart';
 import 'package:pl_api_helper/pl_api_helper.dart'
     show StreamConfig, StreamError;
 
-typedef StreamResposneMapper<T> = T Function(Map<String, dynamic> data);
+import 'base_sstream.dart';
 
 ///[Singleton] class for handling Dio operations in Sstream.
-class SstreamDio {
+class SstreamDio extends BaseSstream {
   Dio? _dio;
-
-  StreamConfig? _config;
 
   static SstreamDio? _instance;
 
-  SstreamDio._();
+  SstreamDio._({required super.config});
 
-  factory SstreamDio.init({Dio? dio, StreamConfig? config}) {
-    assert(
-      dio != null || config != null,
-      'Either dio or config must be provided',
-    );
-    _instance ??= SstreamDio._();
-    _instance?._dio = dio ?? config?.toDio();
-    _instance?._config = config;
+  factory SstreamDio.init({Dio? dio, required StreamConfig config}) {
+    assert(dio != null, 'Dio must be provided');
+    _instance ??= SstreamDio._(config: config);
+    _instance?._dio = dio ?? config.toDio();
     return _instance!;
   }
 
@@ -43,14 +37,6 @@ class SstreamDio {
     }
 
     return _dio!;
-  }
-
-  String? getStartParse(StreamConfig? config) =>
-      config?.streamResponseStart ?? '';
-  String? getEndParse(StreamConfig? config) => config?.streamResponseEnd ?? '';
-
-  bool doesErrorExists(Map<String, dynamic> decodedData) {
-    return decodedData.containsKey('error') && decodedData['error'] != null;
   }
 
   /// Handle stream chunk
@@ -86,7 +72,7 @@ class SstreamDio {
       try {
         final decodeData = jsonDecode(responseData.toString());
         if (doesErrorExists(decodeData)) {
-          final errorMapper = _config?.parseStreamError;
+          final errorMapper = config.parseStreamError;
           controller.addError(
             errorMapper?.call(decodeData) ?? StreamError('Unknown error', 500),
           );
@@ -149,8 +135,8 @@ class SstreamDio {
     Function()? onDone,
   }) {
     final controller = StreamController<T>.broadcast();
-    final startParse = getStartParse(_config);
-    final endParse = getEndParse(_config);
+    final startParse = getStartParse();
+    final endParse = getEndParse();
     request
         .then((response) {
           final body = response.data;
