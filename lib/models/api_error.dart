@@ -1,18 +1,47 @@
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
+/// [ApiErrorType] - Enumeration of API error types
+///
+/// This enum defines the different types of errors that can occur during API calls.
+/// Each error type has an associated HTTP status code for easy identification.
 enum ApiErrorType {
+  /// No internet connection available
   noInternet(code: 0),
+
+  /// Request timeout occurred
   timeout(code: 1),
+
+  /// Unauthorized access (401)
   unauthorized(code: 401),
+
+  /// Bad request (400)
   badRequest(code: 400),
+
+  /// Server returned unexpected response (500)
   serverUnexpected(code: 500),
+
+  /// Internal server error (500)
   internalServerError(code: 500),
+
+  /// Unknown error (520)
   unknown(code: 520);
 
+  /// HTTP status code associated with this error type
   final int code;
+
+  /// Constructor for ApiErrorType
   const ApiErrorType({required this.code});
 
+  /// Get ApiErrorType from HTTP status code
+  ///
+  /// This method maps HTTP status codes to their corresponding ApiErrorType.
+  /// If no matching error type is found, returns ApiErrorType.unknown.
+  ///
+  /// Parameters:
+  /// - [code]: HTTP status code
+  ///
+  /// Returns: ApiErrorType corresponding to the status code
   static ApiErrorType fromCode(int code) {
     return ApiErrorType.values.firstWhere(
       (e) => e.code == code,
@@ -21,17 +50,52 @@ enum ApiErrorType {
   }
 }
 
+/// [ApiError] - Comprehensive error handling for API calls
+///
+/// This class provides detailed error information for API requests,
+/// including error type, message, status codes, and request/response details.
+///
+/// Key features:
+/// - Detailed error information
+/// - Support for both Dio and HTTP client errors
+/// - Request/response context preservation
+/// - Multiple error type classifications
 class ApiError {
+  /// Type of error that occurred
   final ApiErrorType type;
+
+  /// Human-readable error message
   final String? message;
+
+  /// HTTP status code from the response
   final int? statusCode;
+
+  /// Application-specific error code
   final String? errorCode;
 
+  /// Dio request options (if using Dio client)
   final RequestOptions? requestOptions;
+
+  /// Dio response object (if using Dio client)
   final Response<dynamic>? response;
+
+  /// HTTP headers from the response
   final Map<String, dynamic>? headers;
+
+  /// Response body data
   final dynamic body;
 
+  /// Constructor for ApiError
+  ///
+  /// Parameters:
+  /// - [type]: Type of error that occurred
+  /// - [message]: Human-readable error message
+  /// - [statusCode]: HTTP status code
+  /// - [errorCode]: Application-specific error code
+  /// - [requestOptions]: Dio request options (if using Dio)
+  /// - [response]: Dio response object (if using Dio)
+  /// - [headers]: HTTP headers from response
+  /// - [body]: Response body data
   const ApiError({
     required this.type,
     this.message,
@@ -43,6 +107,15 @@ class ApiError {
     this.body,
   });
 
+  /// Create ApiError from DioException
+  ///
+  /// This factory method converts a DioException into an ApiError,
+  /// extracting relevant information and determining the appropriate error type.
+  ///
+  /// Parameters:
+  /// - [error]: DioException to convert
+  ///
+  /// Returns: ApiError instance with detailed error information
   factory ApiError.fromDio(DioException error) {
     ApiErrorType type = ApiErrorType.unknown;
     String? message = error.message;

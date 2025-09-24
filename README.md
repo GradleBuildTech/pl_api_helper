@@ -1,17 +1,32 @@
 # pl_api_helper
 
-A Flutter plugin for simplified API calls, caching, and model mapping using Dio.
+A comprehensive Flutter plugin for simplified API calls, caching, and model mapping with support for both Dio and standard HTTP clients.
 
-## Features
+## 🚀 Features
 
-- Easy Dio initialization with base URL, headers, and cache manager.
-- Built-in cache interceptor for GET requests.
-- Simple API call and model mapping.
-- Supports custom cache configuration.
+### Core Functionality
+- **Dual HTTP Client Support**: Choose between Dio (advanced) or standard HTTP client
+- **Intelligent Caching**: Memory and disk caching with network awareness
+- **Generic Type Safety**: Full type safety with generic response mapping
+- **Multi-threading Support**: Background parsing to prevent UI blocking
+- **Comprehensive Error Handling**: Detailed error classification and handling
+
+### Advanced Features
+- **Automatic Token Management**: Built-in token refresh and authentication
+- **Request/Response Interceptors**: Customizable request and response processing
+- **Network Awareness**: Smart caching based on connectivity status
+- **Stream Support**: Real-time data streaming capabilities
+- **GraphQL Integration**: Built-in GraphQL client support
+
+### Developer Experience
+- **Singleton Pattern**: Global access to API helpers
+- **Flexible Configuration**: Easy setup with sensible defaults
+- **Comprehensive Logging**: Built-in logging with release mode optimization
+- **Widget Integration**: Ready-to-use widgets for common scenarios
 
 ---
 
-## Getting Started
+## 📦 Installation
 
 Add to your `pubspec.yaml`:
 
@@ -20,17 +35,23 @@ dependencies:
   pl_api_helper: ^<latest_version>
 ```
 
+Then run:
+```bash
+flutter pub get
+```
+
 ---
 
-## Usage
+## 🚀 Quick Start
 
-### 1. Initialize DioApiHelper
+### 1. Initialize DioApiHelper (Recommended)
 
 ```dart
 import 'package:dio/dio.dart';
 import 'package:pl_api_helper/pl_api_helper.dart';
 
 void main() {
+  // Initialize DioApiHelper with configuration
   DioApiHelper.init(
     dio: Dio(
       BaseOptions(
@@ -41,56 +62,135 @@ void main() {
           'Accept': 'application/json',
           'Authorization': 'Bearer <your-token>',
         },
+        connectTimeout: Duration(seconds: 30),
+        receiveTimeout: Duration(seconds: 30),
       ),
     ),
     baseUrl: 'https://your-api-domain.com',
-    cacherManager: CacherManager.instance,
-  )..addInterceptor(
-      CacheInterceptor(
-        cachingPaths: {
-          ApiMethod.get: {'/v1/course/category'},
-        },
-      ),
-    );
+  );
+}
+```
+
+### 2. Alternative: Initialize HttpHelper (Lightweight)
+
+```dart
+import 'package:pl_api_helper/pl_api_helper.dart';
+
+void main() {
+  // Initialize HttpHelper for simple HTTP requests
+  HttpHelper.init(
+    baseUrl: 'https://your-api-domain.com',
+    apiConfig: ApiConfig(
+      baseUrl: 'https://your-api-domain.com',
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: Duration(seconds: 30),
+    ),
+  );
 }
 ```
 
 ---
 
-## 2. Using TokenDelegation and DioTokenInterceptor (Automatic Token Refresh)
+## 📡 Making API Calls
 
-You can use `TokenInterceptor` to automatically attach access tokens to requests and refresh them when expired.
-
-### Step 1: Implement TokenDelegation
-
-Create a class that implements `TokenDelegation`:
+### Basic API Calls
 
 ```dart
-class MyTokenDelegate implements TokenDelegation {
-  @override
-  Future<String> getAccessToken() async => /* load from storage */;
-  @override
-  Future<String> getRefreshToken() async => /* load from storage */;
-  @override
-  Future<void> saveAccessToken(String token) async => /* save to storage */;
-  @override
-  Future<void> saveRefreshToken(String token) async => /* save to storage */;
-  @override
-  Future<void> saveTokens(String accessToken, String? refreshToken) async { /* ... */ }
-  @override
-  Future<void> deleteToken() async => /* clear storage */;
-}
+// GET request with caching
+final result = await DioApiHelper.instance.get<User>(
+  url: '/api/users/123',
+  cacheConfig: CacheConfig(duration: Duration(minutes: 5)),
+  mapper: (data) => User.fromJson(data),
+);
+
+// POST request
+final newUser = await DioApiHelper.instance.post<User>(
+  url: '/api/users',
+  request: {'name': 'John Doe', 'email': 'john@example.com'},
+  mapper: (data) => User.fromJson(data),
+);
+
+// PUT request
+final updatedUser = await DioApiHelper.instance.put<User>(
+  url: '/api/users/123',
+  request: {'name': 'Jane Doe'},
+  mapper: (data) => User.fromJson(data),
+);
+
+// DELETE request
+await DioApiHelper.instance.delete<void>(
+  url: '/api/users/123',
+  mapper: (data) => null,
+);
 ```
 
-### Step 2: Add DioTokenInterceptor to Dio
+### Advanced Caching Configuration
 
 ```dart
-import 'package:dio/dio.dart';
-import 'package:pl_api_helper/interceptors/dio/token_interceptor.dio.dart';
+// Custom cache configuration
+final cacheConfig = CacheConfig(
+  duration: Duration(hours: 1),
+  useMemoryCache: true,
+  useDiskCache: true,
+  maxCacheSize: 50 * 1024 * 1024, // 50MB
+  onlyGetWhenDisconnected: false,
+);
 
-final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
+final result = await DioApiHelper.instance.get<List<Post>>(
+  url: '/api/posts',
+  cacheConfig: cacheConfig,
+  mapper: (data) => (data as List).map((json) => Post.fromJson(json)).toList(),
+);
+```
 
-dio.interceptors.add(
+---
+
+## 🔐 Authentication & Token Management
+
+### Automatic Token Refresh
+
+```dart
+// Step 1: Implement TokenDelegation
+class MyTokenDelegate implements TokenDelegation {
+  @override
+  Future<String> getAccessToken() async {
+    // Load from secure storage
+    return await SecureStorage.read('access_token') ?? '';
+  }
+  
+  @override
+  Future<String> getRefreshToken() async {
+    return await SecureStorage.read('refresh_token') ?? '';
+  }
+  
+  @override
+  Future<void> saveAccessToken(String token) async {
+    await SecureStorage.write('access_token', token);
+  }
+  
+  @override
+  Future<void> saveRefreshToken(String token) async {
+    await SecureStorage.write('refresh_token', token);
+  }
+  
+  @override
+  Future<void> saveTokens(String accessToken, String? refreshToken) async {
+    await saveAccessToken(accessToken);
+    if (refreshToken != null) await saveRefreshToken(refreshToken);
+  }
+  
+  @override
+  Future<void> deleteToken() async {
+    await SecureStorage.delete('access_token');
+    await SecureStorage.delete('refresh_token');
+  }
+}
+
+// Step 2: Add Token Interceptor
+DioApiHelper.instance.addInterceptor(
   DioTokenInterceptor(
     baseUrl: 'https://api.example.com',
     refreshEndpoint: '/auth/refresh',
@@ -100,41 +200,113 @@ dio.interceptors.add(
     tokenDelegate: MyTokenDelegate(),
     onUnauthenticated: () {
       // Handle logout or navigation to login
+      Navigator.pushReplacementNamed(context, '/login');
     },
   ),
 );
 ```
 
-### Step 3: Make API Calls
-
-```dart
-final response = await dio.get('/protected/resource');
-```
-
-> DioTokenInterceptor will automatically refresh the token on 401/403 errors and retry the request.
-
 ---
 
-### 3. Call API and Parse Model
+## 🎯 Model Examples
 
+### User Model
 ```dart
-final result = await DioApiHelper.instance.get(
-  url: '/v1/course/category',
-  forceGet: true,
-  cacheConfig: CacheConfig(duration: Duration(minutes: 10)),
-  mapper: (data) => CourseCategoryResposne.fromJson(data),
-);
+class User {
+  final String id;
+  final String name;
+  final String email;
+  final DateTime createdAt;
 
-// Access categories
-for (final category in result.categories) {
-  print('Category: ${category.name} (ID: ${category.id})');
+  User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.createdAt,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
+```
+
+### Post Model with Comments
+```dart
+class Post {
+  final String id;
+  final String title;
+  final String content;
+  final String authorId;
+  final List<Comment> comments;
+  final DateTime createdAt;
+
+  Post({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.authorId,
+    required this.comments,
+    required this.createdAt,
+  });
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      content: json['content'] as String,
+      authorId: json['authorId'] as String,
+      comments: (json['comments'] as List<dynamic>?)
+          ?.map((e) => Comment.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+}
+
+class Comment {
+  final String id;
+  final String content;
+  final String authorId;
+  final DateTime createdAt;
+
+  Comment({
+    required this.id,
+    required this.content,
+    required this.authorId,
+    required this.createdAt,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] as String,
+      content: json['content'] as String,
+      authorId: json['authorId'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
 }
 ```
 
 ---
 
-### 4. Example Widget Integration
+## 🎨 Widget Integration
 
+### Complete Example App
 ```dart
 class MyApp extends StatefulWidget {
   @override
@@ -142,32 +314,67 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List<CourseCategory> categories = [];
+  List<Post> posts = [];
+  bool isLoading = false;
+  String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Initialize DioApiHelper here
+    _loadPosts();
   }
 
-  Future<void> _getCategories() async {
+  Future<void> _loadPosts() async {
     setState(() {
-      categories = [];
+      isLoading = true;
+      errorMessage = null;
     });
+
     try {
-      final result = await DioApiHelper.instance.get(
-        url: '/v1/course/category',
-        forceGet: true,
+      final result = await DioApiHelper.instance.get<List<Post>>(
+        url: '/api/posts',
         cacheConfig: CacheConfig(duration: Duration(minutes: 10)),
-        mapper: (data) => CourseCategoryResposne.fromJson(data),
+        mapper: (data) => (data as List)
+            .map((json) => Post.fromJson(json as Map<String, dynamic>))
+            .toList(),
       );
+      
       setState(() {
-        categories = result.categories;
+        posts = result;
+        isLoading = false;
       });
     } catch (e) {
-      if (e is ApiError) {
-        print("Error Type: ${e.type}, Message: ${e.statusCode}");
-      }
+      setState(() {
+        isLoading = false;
+        if (e is ApiError) {
+          errorMessage = 'Error: ${e.message} (${e.type})';
+        } else {
+          errorMessage = 'Unknown error occurred';
+        }
+      });
+    }
+  }
+
+  Future<void> _createPost() async {
+    try {
+      final newPost = await DioApiHelper.instance.post<Post>(
+        url: '/api/posts',
+        request: {
+          'title': 'New Post',
+          'content': 'This is a new post created via API',
+        },
+        mapper: (data) => Post.fromJson(data as Map<String, dynamic>),
+      );
+      
+      setState(() {
+        posts = [newPost, ...posts];
+      });
+    } catch (e) {
+      setState(() {
+        if (e is ApiError) {
+          errorMessage = 'Failed to create post: ${e.message}';
+        }
+      });
     }
   }
 
@@ -175,66 +382,184 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Plugin example app')),
-        floatingActionButton: InkWell(
-          onTap: _getCategories,
-          child: const Icon(Icons.refresh),
+        appBar: AppBar(
+          title: const Text('Posts App'),
+          actions: [
+            IconButton(
+              onPressed: _loadPosts,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
         ),
-        body: ListView.builder(
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final category = categories[index];
-            return ListTile(
-              title: Text(category.name),
-              subtitle: Text('ID: ${category.id}'),
-            );
-          },
+        floatingActionButton: FloatingActionButton(
+          onPressed: _createPost,
+          child: const Icon(Icons.add),
         ),
+        body: _buildBody(),
       ),
     );
   }
-}
-```
 
----
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-## Model Example
+    if (errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ElevatedButton(
+              onPressed: _loadPosts,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
 
-```dart
-class CourseCategory {
-  final String id;
-  final String name;
+    if (posts.isEmpty) {
+      return const Center(child: Text('No posts available'));
+    }
 
-  CourseCategory({required this.id, required this.name});
-
-  factory CourseCategory.fromJson(Map<String, dynamic> json) {
-    return CourseCategory(
-      id: json['id'] as String,
-      name: json['name'] as String,
+    return ListView.builder(
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return Card(
+          margin: const EdgeInsets.all(8.0),
+          child: ListTile(
+            title: Text(post.title),
+            subtitle: Text(post.content),
+            trailing: Text(post.createdAt.toString().split(' ')[0]),
+          ),
+        );
+      },
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name};
-  }
-}
-
-class CourseCategoryResposne {
-  final List<CourseCategory> categories;
-
-  CourseCategoryResposne({required this.categories});
-
-  factory CourseCategoryResposne.fromJson(Map<String, dynamic> json) {
-    final cats = (json['categories'] as List<dynamic>)
-        .map((e) => CourseCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
-    return CourseCategoryResposne(categories: cats);
-  }
 }
 ```
 
 ---
 
-## License
+## 🛠️ Advanced Features
 
-MIT
+### Custom Interceptors
+```dart
+class LoggingInterceptor extends BaseInterceptor {
+  @override
+  Future<void> onRequest({
+    required String method,
+    required String url,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? body,
+  }) async {
+    Logger.d('API Request', '$method $url');
+    Logger.d('API Headers', headers.toString());
+    Logger.d('API Body', body.toString());
+  }
+
+  @override
+  Future<void> onResponse(http.Response response) async {
+    Logger.d('API Response', '${response.statusCode} ${response.body}');
+  }
+}
+
+// Add to your helper
+HttpHelper.instance.addInterceptor(LoggingInterceptor());
+```
+
+### Error Handling
+```dart
+try {
+  final result = await DioApiHelper.instance.get<User>('/api/user');
+} on ApiError catch (e) {
+  switch (e.type) {
+    case ApiErrorType.noInternet:
+      // Handle no internet
+      break;
+    case ApiErrorType.unauthorized:
+      // Handle unauthorized
+      break;
+    case ApiErrorType.timeout:
+      // Handle timeout
+      break;
+    default:
+      // Handle other errors
+      break;
+  }
+}
+```
+
+### Cache Management
+```dart
+// Clear all cache
+await CacherManager.instance.clear();
+
+// Get cache size
+final size = await CacherManager.instance.getCacheSize();
+print('Cache size: ${size / 1024 / 1024} MB');
+
+// Remove specific cache
+await CacherManager.instance.removeData('/api/posts');
+```
+
+---
+
+## 📚 API Reference
+
+### DioApiHelper
+- `get<T>()` - GET request with caching support
+- `post<T>()` - POST request
+- `put<T>()` - PUT request  
+- `delete<T>()` - DELETE request
+- `uploadFile<T>()` - File upload (not implemented)
+- `addInterceptor()` - Add Dio interceptors
+
+### HttpHelper
+- `get<T>()` - GET request with caching support
+- `post<T>()` - POST request
+- `put<T>()` - PUT request
+- `delete<T>()` - DELETE request
+- `addInterceptor()` - Add HTTP interceptors
+
+### CacheConfig
+- `duration` - Cache expiration time
+- `useMemoryCache` - Enable memory caching
+- `useDiskCache` - Enable disk caching
+- `maxCacheSize` - Maximum cache size in bytes
+- `onlyGetWhenDisconnected` - Use cache only when offline
+
+### ApiError
+- `type` - Error type (noInternet, timeout, unauthorized, etc.)
+- `message` - Human-readable error message
+- `statusCode` - HTTP status code
+- `errorCode` - Application-specific error code
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Dio](https://pub.dev/packages/dio) - Powerful HTTP client for Dart
+- [HTTP](https://pub.dev/packages/http) - A composable, multi-platform, Future-based library for making HTTP requests
+- [Shared Preferences](https://pub.dev/packages/shared_preferences) - Flutter plugin for reading and writing simple key-value pairs
+- [Connectivity Plus](https://pub.dev/packages/connectivity_plus) - Flutter plugin for discovering the state of the network connectivity

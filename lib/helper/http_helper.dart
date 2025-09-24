@@ -1,22 +1,44 @@
 part of 'helper.dart';
 
-///[HttpHelper] is a singleton class for making HTTP requests using the `http` package.
-/// It extends the [ApiHelper] class and implements methods for GET, POST, PUT, DELETE requests,
-/// as well as handling responses and parsing data.
+/// [HttpHelper] - Standard HTTP client implementation of ApiHelper
+///
+/// This is a singleton class that provides HTTP client functionality using the standard `http` package.
+/// It's a lightweight alternative to DioApiHelper, suitable for simple HTTP requests.
+///
+/// Key features:
+/// - Standard HTTP client from the `http` package
+/// - Singleton pattern for global access
+/// - Support for all HTTP methods (GET, POST, PUT, DELETE)
+/// - Request/response interceptors
+/// - Automatic response parsing and error handling
+/// - Cache integration for GET requests
+/// - Timeout configuration
 class HttpHelper extends ApiHelper {
+  /// Singleton instance of HttpHelper
   static HttpHelper? _instance;
 
-  /// The underlying HTTP client from the `http` package.
+  /// The underlying HTTP client from the `http` package
   final http.Client _client = http.Client();
 
+  /// Base URL for API requests
   String? _baseUrl;
 
+  /// Default headers to include with all requests
   Map<String, String> _defaultHeaders = {};
 
+  /// Request timeout duration
   Duration _timeout = const Duration(seconds: 30);
 
+  /// Private constructor for singleton pattern
   HttpHelper._();
 
+  /// Factory constructor to initialize the singleton instance
+  ///
+  /// Parameters:
+  /// - [apiConfig]: API configuration object (optional)
+  /// - [baseUrl]: Base URL for API requests (optional)
+  ///
+  /// Returns: HttpHelper singleton instance
   factory HttpHelper.init({ApiConfig? apiConfig, String? baseUrl}) {
     _instance ??= HttpHelper._();
     _instance?._baseUrl = baseUrl ?? apiConfig?.baseUrl;
@@ -26,6 +48,13 @@ class HttpHelper extends ApiHelper {
     return _instance!;
   }
 
+  /// Get the singleton instance
+  ///
+  /// Throws an exception if the instance hasn't been initialized yet.
+  ///
+  /// Returns: HttpHelper singleton instance
+  ///
+  /// Throws: Exception if not initialized
   static HttpHelper get instance {
     if (_instance == null) {
       throw Exception("HttpHelper is not initialized");
@@ -33,8 +62,16 @@ class HttpHelper extends ApiHelper {
     return _instance!;
   }
 
+  /// List of registered interceptors for request/response modification
   final List<BaseInterceptor> _interceptors = [];
 
+  /// Add an interceptor to the HTTP client
+  ///
+  /// Interceptors can be used to modify requests and responses,
+  /// add authentication headers, handle errors, etc.
+  ///
+  /// Parameters:
+  /// - [client]: Base interceptor to add
   void addInterceptor(BaseInterceptor client) {
     _interceptors.add(client);
   }
@@ -90,9 +127,8 @@ class HttpHelper extends ApiHelper {
       switch (method) {
         case ApiMethod.get:
           final uri = Uri.parse(buildUrl);
-          response = await _client
-              .get(uri, headers: requestHeader)
-              .timeout(_timeout);
+          response =
+              await _client.get(uri, headers: requestHeader).timeout(_timeout);
           break;
         case ApiMethod.post:
           final uri = Uri.parse(buildUrl);
