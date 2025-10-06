@@ -1,6 +1,7 @@
 <div align="center">
 
-# <img src="icon.svg" width="64" height="64" alt="pl_api_helper icon"> pl_api_helper
+# <img src="icon.svg" width="64" height="64" alt="pl_api_helper icon"> 
+# pl_api_helper
 
 **A comprehensive Flutter plugin for simplified API calls, caching, and model mapping with support for both Dio and standard HTTP clients.**
 
