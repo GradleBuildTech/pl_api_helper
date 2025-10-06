@@ -49,8 +49,7 @@ class HttpTokenInterceptor extends BaseTokenInterceptor
   @override
   Future<void> onResponse(http.Response response) async {
     final statusCode = response.statusCode;
-    final isAuthError =
-        response.statusCode == HttpStatus.unauthorized ||
+    final isAuthError = response.statusCode == HttpStatus.unauthorized ||
         response.statusCode == HttpStatus.forbidden;
     if (statusCode == HttpStatus.badGateway ||
         statusCode == HttpStatus.serviceUnavailable) {

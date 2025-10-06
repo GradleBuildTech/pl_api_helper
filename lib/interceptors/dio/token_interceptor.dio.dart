@@ -39,8 +39,7 @@ class DioTokenInterceptor extends BaseTokenInterceptor implements Interceptor {
   // ignore: deprecated_member_use
   void onError(DioError err, ErrorInterceptorHandler handler) async {
     final statusCode = err.response?.statusCode;
-    final isAuthError =
-        statusCode == HttpStatus.unauthorized ||
+    final isAuthError = statusCode == HttpStatus.unauthorized ||
         statusCode == HttpStatus.forbidden;
 
     /// Handle display of maintenance pop-up

@@ -1,28 +1,51 @@
-# pl_api_helper
+<div align="center">
 
-A comprehensive Flutter plugin for simplified API calls, caching, and model mapping with support for both Dio and standard HTTP clients.
+# <img src="icon.svg" width="64" height="64" alt="pl_api_helper icon"> pl_api_helper
+
+**A comprehensive Flutter plugin for simplified API calls, caching, and model mapping with support for both Dio and standard HTTP clients.**
+
+[![pub package](https://img.shields.io/pub/v/pl_api_helper.svg)](https://pub.dev/packages/pl_api_helper)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [API Reference](#-api-reference)
+- [Advanced Usage](#-advanced-usage)
+- [Examples](#-examples)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
 
 ## 🚀 Features
 
-### Core Functionality
-- **Dual HTTP Client Support**: Choose between Dio (advanced) or standard HTTP client
-- **Intelligent Caching**: Memory and disk caching with network awareness
-- **Generic Type Safety**: Full type safety with generic response mapping
-- **Multi-threading Support**: Background parsing to prevent UI blocking
-- **Comprehensive Error Handling**: Detailed error classification and handling
+### 🔥 Core Functionality
+- **🔄 Dual HTTP Client Support** - Choose between Dio (advanced) or standard HTTP client
+- **🧠 Intelligent Caching** - Memory and disk caching with network awareness
+- **🛡️ Generic Type Safety** - Full type safety with generic response mapping
+- **⚡ Multi-threading Support** - Background parsing to prevent UI blocking
+- **🎯 Comprehensive Error Handling** - Detailed error classification and handling
 
-### Advanced Features
-- **Automatic Token Management**: Built-in token refresh and authentication
-- **Request/Response Interceptors**: Customizable request and response processing
-- **Network Awareness**: Smart caching based on connectivity status
-- **Stream Support**: Real-time data streaming capabilities
-- **GraphQL Integration**: Built-in GraphQL client support
+### 🔧 Advanced Features
+- **🔐 Automatic Token Management** - Built-in token refresh and authentication
+- **🔗 Request/Response Interceptors** - Customizable request and response processing
+- **📡 Network Awareness** - Smart caching based on connectivity status
+- **🌊 Stream Support** - Real-time data streaming capabilities
+- **📊 GraphQL Integration** - Built-in GraphQL client support
 
-### Developer Experience
-- **Singleton Pattern**: Global access to API helpers
-- **Flexible Configuration**: Easy setup with sensible defaults
-- **Comprehensive Logging**: Built-in logging with release mode optimization
-- **Widget Integration**: Ready-to-use widgets for common scenarios
+### 👨‍💻 Developer Experience
+- **🏗️ Singleton Pattern** - Global access to API helpers
+- **⚙️ Flexible Configuration** - Easy setup with sensible defaults
+- **📝 Comprehensive Logging** - Built-in logging with release mode optimization
+- **🎨 Widget Integration** - Ready-to-use widgets for common scenarios
 
 ---
 
@@ -32,7 +55,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  pl_api_helper: ^<latest_version>
+  pl_api_helper: ^0.0.1
 ```
 
 Then run:
@@ -211,6 +234,7 @@ DioApiHelper.instance.addInterceptor(
 ## 🎯 Model Examples
 
 ### User Model
+
 ```dart
 class User {
   final String id;
@@ -246,6 +270,7 @@ class User {
 ```
 
 ### Post Model with Comments
+
 ```dart
 class Post {
   final String id;
@@ -307,6 +332,7 @@ class Comment {
 ## 🎨 Widget Integration
 
 ### Complete Example App
+
 ```dart
 class MyApp extends StatefulWidget {
   @override
@@ -447,6 +473,7 @@ class _MyAppState extends State<MyApp> {
 ## 🛠️ Advanced Features
 
 ### Custom Interceptors
+
 ```dart
 class LoggingInterceptor extends BaseInterceptor {
   @override
@@ -473,6 +500,7 @@ HttpHelper.instance.addInterceptor(LoggingInterceptor());
 ```
 
 ### Error Handling
+
 ```dart
 try {
   final result = await DioApiHelper.instance.get<User>('/api/user');
@@ -495,6 +523,7 @@ try {
 ```
 
 ### Cache Management
+
 ```dart
 // Clear all cache
 await CacherManager.instance.clear();
@@ -512,54 +541,100 @@ await CacherManager.instance.removeData('/api/posts');
 ## 📚 API Reference
 
 ### DioApiHelper
-- `get<T>()` - GET request with caching support
-- `post<T>()` - POST request
-- `put<T>()` - PUT request  
-- `delete<T>()` - DELETE request
-- `uploadFile<T>()` - File upload (not implemented)
-- `addInterceptor()` - Add Dio interceptors
+
+| Method | Description |
+|--------|-------------|
+| `get<T>()` | GET request with caching support |
+| `post<T>()` | POST request |
+| `put<T>()` | PUT request |
+| `delete<T>()` | DELETE request |
+| `uploadFile<T>()` | File upload (not implemented) |
+| `addInterceptor()` | Add Dio interceptors |
 
 ### HttpHelper
-- `get<T>()` - GET request with caching support
-- `post<T>()` - POST request
-- `put<T>()` - PUT request
-- `delete<T>()` - DELETE request
-- `addInterceptor()` - Add HTTP interceptors
+
+| Method | Description |
+|--------|-------------|
+| `get<T>()` | GET request with caching support |
+| `post<T>()` | POST request |
+| `put<T>()` | PUT request |
+| `delete<T>()` | DELETE request |
+| `addInterceptor()` | Add HTTP interceptors |
 
 ### CacheConfig
-- `duration` - Cache expiration time
-- `useMemoryCache` - Enable memory caching
-- `useDiskCache` - Enable disk caching
-- `maxCacheSize` - Maximum cache size in bytes
-- `onlyGetWhenDisconnected` - Use cache only when offline
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `duration` | `Duration` | Cache expiration time |
+| `useMemoryCache` | `bool` | Enable memory caching |
+| `useDiskCache` | `bool` | Enable disk caching |
+| `maxCacheSize` | `int` | Maximum cache size in bytes |
+| `onlyGetWhenDisconnected` | `bool` | Use cache only when offline |
 
 ### ApiError
-- `type` - Error type (noInternet, timeout, unauthorized, etc.)
-- `message` - Human-readable error message
-- `statusCode` - HTTP status code
-- `errorCode` - Application-specific error code
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `ApiErrorType` | Error type (noInternet, timeout, unauthorized, etc.) |
+| `message` | `String?` | Human-readable error message |
+| `statusCode` | `int?` | HTTP status code |
+| `errorCode` | `String?` | Application-specific error code |
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions! Please see our contributing guidelines:
+
+1. **Fork** the repository
+2. **Create** your feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add some amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/pl_api_helper.git
+
+# Navigate to the plugin directory
+cd pl_api_helper
+
+# Install dependencies
+flutter pub get
+
+# Run tests
+flutter test
+
+# Run example app
+cd example
+flutter run
+```
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- [Dio](https://pub.dev/packages/dio) - Powerful HTTP client for Dart
-- [HTTP](https://pub.dev/packages/http) - A composable, multi-platform, Future-based library for making HTTP requests
-- [Shared Preferences](https://pub.dev/packages/shared_preferences) - Flutter plugin for reading and writing simple key-value pairs
-- [Connectivity Plus](https://pub.dev/packages/connectivity_plus) - Flutter plugin for discovering the state of the network connectivity
+We'd like to thank the following projects and contributors:
+
+- **[Dio](https://pub.dev/packages/dio)** - Powerful HTTP client for Dart
+- **[HTTP](https://pub.dev/packages/http)** - A composable, multi-platform, Future-based library for making HTTP requests
+- **[Shared Preferences](https://pub.dev/packages/shared_preferences)** - Flutter plugin for reading and writing simple key-value pairs
+- **[Connectivity Plus](https://pub.dev/packages/connectivity_plus)** - Flutter plugin for discovering the state of the network connectivity
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Flutter community**
+
+[⭐ Star this repo](https://github.com/your-username/pl_api_helper) • [🐛 Report Bug](https://github.com/your-username/pl_api_helper/issues) • [💡 Request Feature](https://github.com/your-username/pl_api_helper/issues)
+
+</div>
